@@ -203,6 +203,17 @@ def unravel_index(indices, shape):
     ret = [x.astype(indices.dtype) for x in ivy.unravel_index(indices, shape)]
     return tuple(ret)
 
-
 c_ = CClass()
 r_ = RClass()
+
+@to_ivy_arrays_and_back
+def apply_along_axis(func1d, axis, arr, *args,**kwargs):
+    num_dims = arr.ndim
+    axis = _canonicalize_axis(axis, num_dims)
+    func = lambda arr: func1d(arr,*args,**kwargs)
+    for i in range(1, num_dims - axis):
+        func = ivy.vmap(func, in_axes=i, out_axes = -1)
+    for i in range(axis):
+        func = ivy.vmap(func, in_axes = 0, out_axes = 0)
+    return func(arr)
+
